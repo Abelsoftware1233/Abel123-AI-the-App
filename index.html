@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Abel AI — Volledige Suite</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app-container">
+  
+  <!-- HEADER -->
+  <header class="hud">
+    <div class="hud-left">
+      <div class="core" id="core">
+        <span class="core-ring r1"></span>
+        <span class="core-ring r2"></span>
+        <span class="core-dot"></span>
+      </div>
+      <div>
+        <h1>ABEL123 <span class="highlight">AI</span></h1>
+        <p class="status" id="statusText">● Verbonden</p>
+      </div>
+    </div>
+    <div class="hud-right">
+      <button id="settingsBtn" class="btn-ghost">⚙</button>
+      <button id="clearBtn" class="btn-ghost">↺</button>
+    </div>
+  </header>
+
+  <!-- SETTINGS PANEL -->
+  <div id="settingsPanel" class="settings-panel" style="display:none;">
+    <label for="apiBaseInput">Backend-URL (leeg = lokaal / localhost)</label>
+    <input type="text" id="apiBaseInput" placeholder="https://jouw-server.nl">
+    <button id="saveApiBaseBtn" class="btn-primary">Opslaan</button>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" data-tab="chat">💬 Chat</button>
+    <button class="tab" data-tab="face">👤 Gezicht</button>
+  </div>
+
+  <!-- CHAT TAB -->
+  <div id="chatTab" class="tab-content active">
+    <div class="log" id="log">
+      <div class="message system">
+        <span class="time">00:00:00</span>
+        <span class="badge sys">SYS</span>
+        <span>Abel123 AI online. Stel een vraag.</span>
+      </div>
+    </div>
+    <form class="input-area" id="chatForm">
+      <input type="text" id="chatInput" placeholder="Typ een bericht..." autocomplete="off">
+      <button type="submit" id="sendBtn">➤</button>
+    </form>
+  </div>
+
+  <!-- FACE TAB -->
+  <div id="faceTab" class="tab-content">
+    <div class="face-area">
+      <div class="image-preview" id="facePreview">
+        <span class="placeholder">👤 Upload een gezichtsfoto</span>
+      </div>
+      <div class="upload-area">
+        <input type="file" id="faceUpload" accept="image/*" hidden>
+        <button id="uploadBtn" class="btn-primary">📁 Upload foto</button>
+        <button id="analyzeBtn" class="btn-secondary" disabled>🔍 Analyseer</button>
+      </div>
+      <div class="analysis-result" id="analysisResult"></div>
+    </div>
+  </div>
+
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
