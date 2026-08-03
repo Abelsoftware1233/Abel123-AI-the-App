@@ -26,9 +26,9 @@ SYSTEM_PROMPT = (
 )
 
 # ========================
-# TOKENBUDGET PER GEBRUIKER (per IP-adres, per dag)
+# TOKENBUDGET PER GEBRUIKER (max 2000 tokens per dag)
 # ========================
-DAILY_TOKEN_LIMIT = 20000
+DAILY_TOKEN_LIMIT = 2000
 
 # In-memory teller: { ip: {"date": "2026-08-03", "tokens": 1234} }
 _usage_lock = threading.Lock()
