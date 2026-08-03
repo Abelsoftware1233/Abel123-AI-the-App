@@ -30,14 +30,11 @@ SYSTEM_PROMPT = (
 # ========================
 DAILY_TOKEN_LIMIT = 20000
 
-# In-memory teller: { ip: {"date": "2026-08-02", "tokens": 1234} }
-# Let op: dit werkt correct met 1 gunicorn-worker. Bij meerdere workers
-# heeft elke worker zijn eigen teller - zie opmerking onderaan dit bestand.
+# In-memory teller: { ip: {"date": "2026-08-03", "tokens": 1234} }
 _usage_lock = threading.Lock()
 _usage = {}
 
 def _get_client_ip():
-    # Als je achter Nginx draait, geeft X-Forwarded-For het echte IP van de gebruiker.
     forwarded = request.headers.get("X-Forwarded-For")
     if forwarded:
         return forwarded.split(",")[0].strip()
@@ -88,7 +85,7 @@ def chat():
 
     try:
         response = anthropic_client.messages.create(
-            model="claude-sonnet-4-6",
+            model="claude-3-5-sonnet-20241022",
             max_tokens=1024,
             system=SYSTEM_PROMPT,
             messages=messages
@@ -134,7 +131,7 @@ def analyze_face():
         ) else "image/jpeg"
 
         response = anthropic_client.messages.create(
-            model="claude-sonnet-4-6",
+            model="claude-3-5-sonnet-20241022",
             max_tokens=300,
             messages=[
                 {
@@ -170,7 +167,7 @@ def analyze_face():
         return jsonify({"error": f"Analyse mislukt: {str(e)}"}), 500
 
 # ========================
-# 3. RESTEREND BUDGET OPVRAGEN (handig voor de frontend)
+# 3. RESTEREND BUDGET OPVRAGEN
 # ========================
 @app.route("/api/usage", methods=["GET"])
 def usage():
@@ -193,27 +190,3 @@ def static_files(path):
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
-
-# ========================
-# BELANGRIJKE OPMERKING - gunicorn met meerdere workers
-# ========================
-# De tokenteller (_usage) staat in het geheugen van dit ene proces. Draai je
-# gunicorn met meerdere workers (bijv. --workers 4), dan heeft elke worker
-# zijn EIGEN teller - een gebruiker kan dan feitelijk tot 4x het dagbudget
-# verbruiken, afhankelijk van welke worker zijn verzoek afhandelt.
-#
-# Oplossingen, van simpel naar robuust:
-#
-# 1) Draai gunicorn met 1 worker (--workers 1). Werkt voor een kleine/
-#    middelgrote launch, simpelste optie, geen extra dependencies.
-#
-# 2) Gebruik Redis als gedeelde teller tussen workers:
-#      apt install redis-server -y
-#      systemctl enable redis-server --now
-#      pip install redis
-#    Vervang dan de _usage dict-logica hierboven door Redis INCR-commando's
-#    met een dagelijkse TTL.
-#
-# 3) Voor een definitieve oplossing bij groei: een lichte database (SQLite of
-#    Postgres) met een tabel (ip, datum, tokens_used), zodat je ook historische
-#    data en eventuele misbruikpatronen kunt inzien.
