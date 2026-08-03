@@ -3,12 +3,7 @@
 // ============================================
 
 // --- Backend URL configuratie ---
-// Standaard: relatief pad (werkt als frontend + backend op dezelfde server draaien,
-// bijv. lokaal via Flask op localhost:5000).
-// Voor een losse app (zoals Web2APK) die naar een GitHub Pages-link wijst, moet dit
-// een volledige URL zijn naar waar app.py draait, bijv. "https://jouw-vps.nl".
-// Wordt onthouden via localStorage zodra je 'm instelt.
-const DEFAULT_API_BASE_URL = ""; // leeg = relatief pad (localhost/zelfde server)
+const DEFAULT_API_BASE_URL = ""; 
 let API_BASE_URL = localStorage.getItem('abel123_api_base') || DEFAULT_API_BASE_URL;
 
 function apiUrl(path) {
@@ -16,13 +11,11 @@ function apiUrl(path) {
 }
 
 function setApiBaseUrl(url) {
-  API_BASE_URL = url.trim().replace(/\/$/, ''); // trailing slash weg
+  API_BASE_URL = url.trim().replace(/\/$/, '');
   localStorage.setItem('abel123_api_base', API_BASE_URL);
   statusText.textContent = API_BASE_URL ? `● Backend: ${API_BASE_URL}` : '● Backend: lokaal';
 }
 
-// Maakt window.setAbelBackend("https://...") bruikbaar vanuit de browser-console,
-// handig om snel te wisselen zonder de UI aan te passen.
 window.setAbelBackend = setApiBaseUrl;
 
 const log = document.getElementById("log");
@@ -181,7 +174,6 @@ analyzeBtn.addEventListener('click', async () => {
   analyzeBtn.textContent = '⏳ Analyseren...';
   analysisResult.textContent = '🔍 Bezig met analyseren...';
   
-  // Converteer dataURL naar blob
   const response = await fetch(uploadedImage);
   const blob = await response.blob();
   const formData = new FormData();
@@ -232,13 +224,22 @@ saveApiBaseBtn.addEventListener('click', () => {
 });
 
 // ============================================
-// 4. CLEAR / RESET
+// 4. CLEAR / RESET & AUTOMATISCHE WISSER (ELKE 30 MIN)
 // ============================================
+function clearChatHistory() {
+  chatHistory = [];
+  log.innerHTML = '';
+  addChatMessage('SYS', 'sys', 'Gesprek automatisch gewist (30-minuten interval).', 'system');
+}
+
 clearBtn.addEventListener('click', () => {
   chatHistory = [];
   log.innerHTML = '';
   addChatMessage('SYS', 'sys', 'Gesprek gewist. Nieuwe sessie.', 'system');
 });
+
+// Automatisch legen elke 30 minuten (30 * 60 * 1000 milliseconden)
+setInterval(clearChatHistory, 30 * 60 * 1000);
 
 // ============================================
 // 5. INIT
@@ -258,9 +259,9 @@ async function loadInitialUsage() {
     const data = await res.json();
     updateRemainingTokens(data.remaining_tokens);
   } catch (err) {
-    // Stil falen - niet kritiek voor de rest van de app
+    // Stil falen
   }
 }
 loadInitialUsage();
 
-console.log('🚀 Abel123 AI geladen!');
+console.log('🚀 Abel123 AI geladen (Max 2000 tokens & 30-min auto-wisser actief)!');
