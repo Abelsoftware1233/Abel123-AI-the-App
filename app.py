@@ -12,11 +12,19 @@ load_dotenv()
 app = Flask(__name__, static_folder=".", static_url_path="")
 CORS(app)
 
-# --- API Key ---
+# --- API Key & Workspace ---
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
+WORKSPACE_ID = os.getenv("ANTHROPIC_WORKSPACE_ID", "wrkspc_01EXoSCPzSJ5FefcfrNZCvCt")
 
 # --- Client ---
-anthropic_client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY) if ANTHROPIC_API_KEY else None
+anthropic_client = (
+    anthropic.Anthropic(
+        api_key=ANTHROPIC_API_KEY,
+        default_headers={"anthropic-workspace-id": WORKSPACE_ID}
+    )
+    if ANTHROPIC_API_KEY
+    else None
+)
 
 # --- Systeemprompt ---
 SYSTEM_PROMPT = (
