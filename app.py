@@ -93,7 +93,7 @@ def chat():
 
     try:
         response = anthropic_client.messages.create(
-            model="claude-3-5-sonnet-20241022",
+            model="claude-3-5-sonnet-latest",
             max_tokens=1024,
             system=SYSTEM_PROMPT,
             messages=messages
@@ -139,7 +139,7 @@ def analyze_face():
         ) else "image/jpeg"
 
         response = anthropic_client.messages.create(
-            model="claude-3-5-sonnet-20241022",
+            model="claude-3-5-sonnet-latest",
             max_tokens=300,
             messages=[
                 {
