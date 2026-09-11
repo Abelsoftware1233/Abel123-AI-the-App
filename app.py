@@ -5,26 +5,21 @@ from datetime import date
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from dotenv import load_dotenv
-import anthropic
+from openai import OpenAI
 
 load_dotenv()
 
 app = Flask(__name__, static_folder=".", static_url_path="")
 CORS(app)
 
-# --- API Key & Workspace ---
-ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
-WORKSPACE_ID = os.getenv("ANTHROPIC_WORKSPACE_ID", "wrkspc_01EXoSCPzSJ5FefcfrNZCvCt")
+# --- API Key ---
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # --- Client ---
-anthropic_client = (
-    anthropic.Anthropic(
-        api_key=ANTHROPIC_API_KEY,
-        default_headers={"anthropic-workspace-id": WORKSPACE_ID}
-    )
-    if ANTHROPIC_API_KEY
-    else None
-)
+openai_client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
+
+# --- Model (goedkoopste OpenAI-model dat ook afbeeldingen kan analyseren) ---
+OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 
 # --- Systeemprompt ---
 SYSTEM_PROMPT = (
@@ -76,12 +71,12 @@ def check_budget_or_error(ip):
     return None
 
 # ========================
-# 1. CHAT (Anthropic)
+# 1. CHAT (OpenAI)
 # ========================
 @app.route("/api/chat", methods=["POST"])
 def chat():
-    if not anthropic_client:
-        return jsonify({"error": "Anthropic API-key ontbreekt"}), 500
+    if not openai_client:
+        return jsonify({"error": "OpenAI API-key ontbreekt"}), 500
 
     ip = _get_client_ip()
     budget_error = check_budget_or_error(ip)
@@ -91,16 +86,18 @@ def chat():
     data = request.get_json()
     messages = data.get("messages", [])
 
-    try:
-        response = anthropic_client.messages.create(
-            model="claude-haiku-4-5-20251001",
-            max_tokens=1024,
-            system=SYSTEM_PROMPT,
-            messages=messages
-        )
-        reply = "".join(block.text for block in response.content if block.type == "text")
+    # OpenAI verwacht de systemprompt als apart bericht in de messages-array
+    openai_messages = [{"role": "system", "content": SYSTEM_PROMPT}] + messages
 
-        tokens_used = response.usage.input_tokens + response.usage.output_tokens
+    try:
+        response = openai_client.chat.completions.create(
+            model=OPENAI_MODEL,
+            max_tokens=1024,
+            messages=openai_messages
+        )
+        reply = response.choices[0].message.content
+
+        tokens_used = response.usage.total_tokens
         add_token_usage(ip, tokens_used)
 
         return jsonify({
@@ -111,12 +108,12 @@ def chat():
         return jsonify({"error": str(e)}), 500
 
 # ========================
-# 2. GEZICHTSHERKENNING (Anthropic Vision)
+# 2. GEZICHTSHERKENNING (OpenAI Vision)
 # ========================
 @app.route("/api/analyze-face", methods=["POST"])
 def analyze_face():
-    if not anthropic_client:
-        return jsonify({"error": "Anthropic API-key ontbreekt"}), 500
+    if not openai_client:
+        return jsonify({"error": "OpenAI API-key ontbreekt"}), 500
 
     ip = _get_client_ip()
     budget_error = check_budget_or_error(ip)
@@ -138,33 +135,31 @@ def analyze_face():
             "image/jpeg", "image/png", "image/gif", "image/webp"
         ) else "image/jpeg"
 
-        response = anthropic_client.messages.create(
-            model="claude-3-5-sonnet-latest",
+        response = openai_client.chat.completions.create(
+            model=OPENAI_MODEL,
             max_tokens=300,
             messages=[
                 {
                     "role": "user",
                     "content": [
                         {
-                            "type": "image",
-                            "source": {
-                                "type": "base64",
-                                "media_type": media_type,
-                                "data": img_base64
-                            }
-                        },
-                        {
                             "type": "text",
                             "text": "Analyseer deze afbeelding. Beschrijf: 1) Geschatte leeftijdscategorie 2) Zichtbare emotie/expressie 3) Algemene opvallende kenmerken. Wees beknopt en respectvol."
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:{media_type};base64,{img_base64}"
+                            }
                         }
                     ]
                 }
             ]
         )
 
-        analysis = "".join(block.text for block in response.content if block.type == "text")
+        analysis = response.choices[0].message.content
 
-        tokens_used = response.usage.input_tokens + response.usage.output_tokens
+        tokens_used = response.usage.total_tokens
         add_token_usage(ip, tokens_used)
 
         return jsonify({
