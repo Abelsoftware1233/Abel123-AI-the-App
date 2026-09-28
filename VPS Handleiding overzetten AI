@@ -1,0 +1,61 @@
+==================================================
+HANDLEIDING: INSTALLATIE AI & ECHO APP OP DE 16 GB VPS
+==================================================
+
+1. Ollama installeren
+--------------------------------------------------
+Log in op je nieuwe 16 GB server en installeer Ollama:
+curl -fsSL https://ollama.com/install.sh | sh
+
+
+2. De AI-modellen binnenhalen (Inclusief Vision)
+--------------------------------------------------
+Download het taalmodel en het visuele model:
+ollama pull llama3
+ollama pull llava
+
+
+3. Je repository clonen
+--------------------------------------------------
+Navigeer naar de juiste map en kloon je echo AI software repository:
+cd /root
+git clone <jouw-repository-url>
+cd Abel123-AI-the-App
+
+
+4. Python virtuele omgeving opzetten
+--------------------------------------------------
+Maak een virtuele omgeving aan en installeer de dependencies:
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+
+5. Een Systemd Service aanmaken
+--------------------------------------------------
+Maak een servicebestand aan voor je applicatie:
+sudo nano /etc/systemd/system/abel123-ai.service
+
+Plak de volgende configuratie in het bestand:
+--------------------------------------------------
+[Unit]
+Description=Abel123 AI App Backend
+After=network.target ollama.service
+
+[Service]
+User=root
+WorkingDirectory=/root/Abel123-AI-the-App
+ExecStart=/root/Abel123-AI-the-App/venv/bin/python app.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+--------------------------------------------------
+(Sla op met Ctrl+O, Enter, en sluit af met Ctrl+X)
+
+
+6. Service activeren en starten
+--------------------------------------------------
+Laat systemd de service inladen en start hem direct:
+sudo systemctl daemon-reload
+sudo systemctl enable --now abel123-ai.service
