@@ -59,3 +59,45 @@ WantedBy=multi-user.target
 Laat systemd de service inladen en start hem direct:
 sudo systemctl daemon-reload
 sudo systemctl enable --now abel123-ai.service
+
+Stap 7: Nginx configureren voor abel1233ai.abelsoftware123.com
+Stel Nginx in zodat je website netjes het webverkeer opvangt en doorstuurt naar jouw lokale Python-app (standaard draait een python-app vaak op poort 5000 of 8000 — pas dit getal hieronder aan naar de poort die jouw app.py gebruikt):
+Maak een nieuwe configuratiebestand aan:
+
+sudo nano /etc/nginx/sites-available/abel1233ai
+
+
+Plak de volgende server-blokken in het bestand:
+
+server {
+    listen 80;
+    server_name abel1233ai.abelsoftware123.com;
+
+    location / {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+
+(Sla het bestand op met Ctrl+O, Enter, en sluit af met Ctrl+X).
+Activeer de configuratie door een symlink aan te maken en Nginx te herstarten:
+
+sudo ln -s /etc/nginx/sites-available/abel1233ai /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl restart nginx
+
+
+Stap 8: SSL-Certificaat (HTTPS) Installeren
+Zorg ervoor dat je domein veilig bereikbaar is via een gratis SSL-certificaat van Let's Encrypt:
+
+
+sudo certbot --nginx -d abel1233ai.abelsoftware123.com
+
+
+
+Volg de stappen op het scherm (vul eventueel je e-mailadres in en akkoord op de voorwaarden). Certbot past de Nginx-configuratie automatisch aan zodat al het verkeer veilig via HTTPS ([https://abel1233ai.abelsoftware123.com](https://abel1233ai.abelsoftware123.com)) loopt.
+Hiermee staat je hele 16 GB server strak ingeregeld: Ollama en je visuele model draaien op volle kracht zonder geheugenstress, je app draait stabiel via Systemd, en via je eigen beveiligde domeinnaam is alles bereikbaar voor jou en je bedrijf!
+
